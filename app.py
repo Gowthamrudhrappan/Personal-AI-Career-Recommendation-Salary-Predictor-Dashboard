@@ -29,12 +29,12 @@ clf_model, reg_model = load_models()
 # -------------------------------
 st.markdown("""
 # 🎯 AI Career Recommendation & Salary Predictor  
-### *Get your ideal career role + salary range instantly using Machine Learning.*
+### *Get your ideal career role + accurate salary range instantly.*
 ---
 """)
 
 # -------------------------------
-# Input Form
+# User Inputs
 # -------------------------------
 col1, col2, col3 = st.columns(3)
 
@@ -45,18 +45,23 @@ with col1:
 
 with col2:
     cert_count = st.number_input("Number of Certifications", 0, 20, 1)
-    projects = st.number_input("Number of Projects Completed", 0, 100, 3)
-    education = st.selectbox("Highest Education", 
-                             ["HighSchool", "Bachelors", "Masters", "PhD"])
+    projects = st.number_input("Projects Completed", 0, 100, 3)
+    education = st.selectbox(
+        "Highest Education",
+        ["HighSchool", "Bachelors", "Masters", "PhD"]
+    )
 
 with col3:
-    current_role = st.selectbox("Current Role",
-                                ["Intern", "Junior Developer", "Developer",
-                                 "Senior Developer", "Team Lead", "Manager"])
+    current_role = st.selectbox(
+        "Current Role",
+        ["Intern", "Junior Developer", "Developer",
+         "Senior Developer", "Team Lead", "Manager"]
+    )
     location_tier = st.selectbox("Location Tier", ["Tier1", "Tier2", "Tier3"])
-    preferred_domain = st.selectbox("Preferred Domain",
-                                    ["Frontend", "Backend", "Fullstack",
-                                     "Data", "DevOps", "Mobile", "QA"])
+    preferred_domain = st.selectbox(
+        "Preferred Domain",
+        ["Frontend", "Backend", "Fullstack", "Data", "DevOps", "Mobile", "QA"]
+    )
 
 submit = st.button("🚀 Predict Career & Salary")
 
@@ -65,7 +70,7 @@ submit = st.button("🚀 Predict Career & Salary")
 # -------------------------------
 if submit:
 
-    # Prepare input data
+    # Prepare input vector
     input_df = pd.DataFrame([{
         "years_exp": years_exp,
         "num_skills": num_skills,
@@ -77,22 +82,28 @@ if submit:
         "location_tier": location_tier
     }])
 
-    # Predict role & salary
+    # Predict Role
     role_pred = clf_model.predict(input_df)[0]
+
+    # Predict Salary (model gives salary in THOUSANDS)
     salary_pred = reg_model.predict(input_df)[0]
 
-    # salary range (±10%)
+    # FIX: convert salary from "thousands" → rupees
+    salary_pred = salary_pred * 100  
+
+    # Salary range (±10%)
     low = salary_pred * 0.9
     high = salary_pred * 1.1
 
-    # Display results
+    # --------------------------
+    # Display Output
+    # --------------------------
     st.success(f"### 🎓 Recommended Role: **{role_pred}**")
-    st.info(f"### 💰 Estimated Salary Range: ₹{low:,.0f} - ₹{high:,.0f} per month")
+    st.info(f"### 💰 Estimated Salary Range: ₹{low:,.0f} - ₹{high:,.0f} / month")
 
     st.markdown("---")
     st.subheader("📈 Career Growth Projection (Next 5 Years)")
 
-    # Project salary growth (12% yearly)
     years = np.arange(0, 6)
     growth = [salary_pred * (1 + 0.12) ** y for y in years]
 
@@ -107,21 +118,21 @@ if submit:
     # Skill Gap Suggestions
     # --------------------------
     st.markdown("---")
-    st.subheader("🛠 Skill Gap Analysis & Recommendations")
+    st.subheader("🛠 Skill Gap Analysis")
 
     suggestions = []
 
     if num_skills < 6:
-        suggestions.append("Add 3–5 high-demand skills for your preferred domain.")
+        suggestions.append("Add 3–5 high-demand domain skills.")
     if portfolio_score < 70:
-        suggestions.append("Improve your portfolio with 1–2 deployed projects.")
+        suggestions.append("Improve your portfolio with 1–2 live projects.")
     if cert_count < 2:
-        suggestions.append("Earn at least 2 industry certifications.")
+        suggestions.append("Complete at least 2 industry certifications.")
     if years_exp < 2:
-        suggestions.append("Gain experience through internships or freelancing.")
+        suggestions.append("Gain experience via internships/freelancing.")
 
     if not suggestions:
-        suggestions.append("You are on a strong path! Focus on leadership roles.")
+        suggestions.append("Great profile! Start preparing for leadership roles.")
 
     for s in suggestions:
         st.write("✔", s)
@@ -130,16 +141,16 @@ if submit:
     # Downloadable Report
     # --------------------------
     st.markdown("---")
-    st.subheader("📄 Download Career Report")
+    st.subheader("📄 Download Your Career Report")
 
     report_text = f"""
 Career Recommendation & Salary Report
 -------------------------------------
 
 Recommended Role: {role_pred}
-Estimated Salary Range: ₹{low:,.0f} - ₹{high:,.0f}
+Salary Range: ₹{low:,.0f} - ₹{high:,.0f}
 
-Your Profile:
+User Profile:
 {input_df.to_string(index=False)}
 
 Suggestions:
